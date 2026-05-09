@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>高达SEED · 命运羁绊测试</title>
+<meta name="description" content="你是基拉还是阿斯兰？深度角色匹配测试">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#050810;color:#c8d8e8;min-height:100vh;overflow-x:hidden}
+.screen{display:none;min-height:100vh;padding:20px;position:relative}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bg-overlay{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(0,80,180,.12) 0%,transparent 60%),
+  linear-gradient(180deg,#050810 0%,#0a1020 50%,#050810 100%);}
+.screen>*{position:relative;z-index:1}
+
+/* 粒子效果 */
+.particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.particle{position:absolute;background:rgba(100,180,255,.6);border-radius:50%;animation:float var(--d,4s) infinite ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-20px);opacity:.8}}
+
+h1{font-size:clamp(2rem,7vw,4rem);color:#60aaff;text-shadow:0 0 40px rgba(96,170,255,.4);margin-bottom:8px;text-align:center;letter-spacing:.15em}
+h2{font-size:clamp(1.1rem,3.5vw,1.6rem);color:#60aaff;margin-bottom:15px;text-align:center;letter-spacing:.1em}
+.tagline{font-size:clamp(.8rem,2vw,.9rem);color:rgba(96,170,255,.4);letter-spacing:.3em;margin-bottom:25px;text-align:center}
+.sub{color:#8098b0;font-size:clamp(.85rem,2.5vw,1rem);text-align:center;line-height:2;margin:15px 0 35px;max-width:480px}
+
+.btn{background:linear-gradient(135deg,rgba(96,170,255,.15),rgba(96,170,255,.05));border:1px solid rgba(96,170,255,.3);color:#60aaff;padding:13px 40px;font-size:1rem;border-radius:4px;cursor:pointer;transition:all .4s;font-family:inherit;margin:10px;letter-spacing:.15em}
+.btn:hover{background:rgba(96,170,255,.2);box-shadow:0 0 25px rgba(96,170,255,.3);transform:translateY(-1px)}
+
+.divider{width:100px;height:1px;background:linear-gradient(90deg,transparent,#60aaff,transparent);margin:20px auto}
+
+.prog-wrap{width:100%;max-width:500px;margin-bottom:25px}
+.prog-label{display:flex;justify-content:space-between;font-size:.75rem;color:rgba(96,170,255,.4);margin-bottom:6px;letter-spacing:.1em}
+.prog{width:100%;height:2px;background:rgba(255,255,255,.06);border-radius:1px}
+.prog-bar{height:100%;background:linear-gradient(90deg,#3060c0,#60aaff);transition:width .5s;position:relative;border-radius:1px}
+.prog-bar::after{content:"";position:absolute;right:0;top:-3px;width:8px;height:8px;background:#60aaff;border-radius:50%;box-shadow:0 0 12px rgba(96,170,255,.8)}
+
+.qcard{background:rgba(255,255,255,.03);border:1px solid rgba(96,170,255,.12);border-radius:6px;padding:clamp(20px,4vw,40px);max-width:580px;width:100%;margin-bottom:15px;position:relative;overflow:hidden}
+.qcard::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(96,170,255,.4),transparent)}
+.qtext{font-size:clamp(1rem,2.8vw,1.2rem);line-height:1.9;color:#c8d8e8}
+
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.opt{background:rgba(0,20,60,.3);border:1px solid rgba(96,170,255,.1);border-radius:4px;padding:13px 18px;cursor:pointer;transition:all .3s;font-size:clamp(.88rem,2.3vw,1rem);color:#8098b0;font-family:inherit;text-align:left;width:100%;position:relative;padding-left:34px}
+.opt::before{content:"◆";position:absolute;left:14px;color:rgba(96,170,255,.25);font-size:.7rem;top:50%;transform:translateY(-50%);transition:all .3s}
+.opt:hover{background:rgba(96,170,255,.08);border-color:rgba(96,170,255,.3);color:#a8c0d8}
+.opt:hover::before{color:#60aaff}
+.opt.sel{background:rgba(96,170,255,.12);border-color:#60aaff;color:#60aaff}
+.opt.sel::before{color:#60aaff}
+
+.gsel{display:flex;gap:20px;margin:30px 0;flex-wrap:wrap;justify-content:center}
+.gcard{background:rgba(0,20,60,.2);border:1px solid rgba(96,170,255,.15);border-radius:6px;padding:30px 45px;cursor:pointer;transition:all .4s;text-align:center;min-width:140px}
+.gcard:hover,.gcard.sel{border-color:#60aaff;background:rgba(96,170,255,.08)}
+.gicon{font-size:2.5rem;margin-bottom:12px;opacity:.7}
+.glabel{font-size:.9rem;color:#8098b0;letter-spacing:.15em}
+
+.rcard{background:rgba(0,20,60,.15);border:1px solid rgba(96,170,255,.2);border-radius:6px;padding:clamp(25px,5vw,45px);max-width:620px;width:100%;text-align:center;position:relative;overflow:hidden}
+.rcard::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#60aaff,transparent)}
+.mpct{font-size:clamp(3.5rem,12vw,6.5rem);color:#60aaff;font-weight:300;text-shadow:0 0 40px rgba(96,170,255,.3);line-height:1}
+.mlbl{font-size:.75rem;color:rgba(96,170,255,.4);letter-spacing:.25em;margin:5px 0 18px}
+.faction-tag{display:inline-block;font-size:.75rem;color:rgba(96,170,255,.5);border:1px solid rgba(96,170,255,.2);padding:3px 14px;border-radius:3px;letter-spacing:.1em;margin-bottom:10px}
+.cname{font-size:clamp(1.8rem,5vw,2.8rem);color:#60aaff;margin:8px 0;letter-spacing:.05em;font-weight:400}
+.ctitle{font-size:.9rem;color:rgba(200,216,232,.4);letter-spacing:.1em;margin-bottom:18px;font-style:italic}
+.reason{margin:18px 0;color:#8098b0;line-height:1.9;font-size:clamp(.85rem,2.3vw,.95rem);text-align:left;background:rgba(0,20,60,.2);border-left:2px solid rgba(96,170,255,.3);padding:15px 18px;border-radius:0 4px 4px 0}
+.story{margin-top:18px;text-align:left;line-height:2;font-size:clamp(.82rem,2.2vw,.92rem);color:#607888;max-height:55vh;overflow-y:auto;padding-right:8px}
+.story::-webkit-scrollbar{width:3px}
+.story::-webkit-scrollbar-thumb{background:rgba(96,170,255,.2);border-radius:2px}
+.story p{margin-bottom:1.2em}
+.stitle{font-size:1.1rem;color:rgba(96,170,255,.5);text-align:center;margin-bottom:16px;letter-spacing:.1em}
+
+.ld-wrap{text-align:center}
+.ld{font-size:1rem;color:rgba(96,170,255,.6);letter-spacing:.3em}
+.ld-bar{width:200px;height:2px;background:rgba(255,255,255,.06);margin:20px auto;position:relative;overflow:hidden;border-radius:1px}
+.ld-bar::after{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,#60aaff,transparent);animation:load 2s ease-in-out infinite}
+@keyframes load{0%{left:-100%}100%{left:100%}}
+
+.rbtn{background:transparent;border:1px solid rgba(96,170,255,.2);color:rgba(96,170,255,.5);padding:9px 28px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:.85rem;margin-top:25px;transition:all .3s;letter-spacing:.1em}
+.rbtn:hover{border-color:#60aaff;color:#60aaff}
+
+@keyframes fi{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.fi{animation:fi .5s ease-out}
+
+.disclaimer{font-size:.65rem;color:rgba(255,255,255,.15);text-align:center;margin-top:30px;max-width:400px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="bg-overlay"></div>
+<div class="particles" id="pts"></div>
+
+<div id="intro" class="screen active">
+  <div class="tagline">CE 71 · 同人创作 · 非官方</div>
+  <h1>高达 SEED</h1>
+  <div class="divider"></div>
+  <h2>命运羁绊测试</h2>
+  <p class="sub">调整者与自然人之间的战争，<br>每个人都在寻找自己的答案。<br>你的选择，将决定你与谁的命运相交。</p>
+  <button class="btn" onclick="start()">开 始 测 试</button>
+  <div class="disclaimer">本测试为同人爱好者创作，非官方内容，不用于任何商业用途。<br>制作：沙隆 · duwei@xiaohongshu.com</div>
+</div>
+
+<div id="quiz" class="screen">
+  <div class="prog-wrap">
+    <div class="prog-label"><span id="qn">第1题</span><span>共10题</span></div>
+    <div class="prog"><div class="prog-bar" id="pb" style="width:0%"></div></div>
+  </div>
+  <div class="qcard fi" id="qc">
+    <div class="qtext" id="qt"></div>
+    <div class="opts" id="os"></div>
+  </div>
+</div>
+
+<div id="gender" class="screen">
+  <h2>选择你的身份</h2>
+  <p class="sub">命运的齿轮，从这一刻开始转动</p>
+  <div class="gsel">
+    <div class="gcard" onclick="pickG('male',this)"><div class="gicon">♂</div><div class="glabel">男</div></div>
+    <div class="gcard" onclick="pickG('female',this)"><div class="gicon">♀</div><div class="glabel">女</div></div>
+  </div>
+</div>
+
+<div id="loading" class="screen">
+  <div class="ld-wrap">
+    <div class="ld">命运正在计算中</div>
+    <div class="ld-bar"></div>
+    <p style="color:rgba(96,170,255,.3);font-size:.8rem;letter-spacing:.15em;margin-top:15px">正在寻找那个与你灵魂相交的人</p>
+  </div>
+</div>
+
+<div id="result" class="screen">
+  <div class="rcard fi" id="rc"></div>
+  <button class="rbtn" onclick="restart()">重新测试</button>
+  <div class="disclaimer" style="margin-top:15px">本测试为同人爱好者创作，非官方内容，不用于任何商业用途。</div>
+</div>
+
+<script>
+const CHARS={kira:{n:"基拉·大和",g:"m",f:"ZAFT/大天使号",tt:"最温柔的最强",s:{"loyalty": 5, "bravery": 5, "rebel": 3, "wisdom": 4, "depth": 5, "morals": 9, "adventure": 3, "humor": 2},r:"你是一个内心柔软但力量强大的人。你不喜欢冲突，但当你在乎的人受到威胁时，你会毫不犹豫地站出来。你的温柔不是软弱，而是你最强大的武器。你相信每个人都可以被理解，每个敌人都可能是未来的朋友。",tb:"基拉·大和原本只是一个普通的学生。\n\n他在赫利奥波利斯的工业殖民卫星上学习，和朋友们一起做着关于未来的梦。他不是什么英雄，他只是一个擅长机械编程的安静少年。\n\n然后那一天，ZAFT的部队袭击了殖民卫星。\n\n基拉和他的朋友们——托尔、赛依、米丽——躲进了避难所。在那里，他看到了一台他参与开发的人形机动兵器。出于本能，他爬进了驾驶舱。\n\n那一刻起，他的人生再也回不去了。\n\n基拉是\"最强调整者\"——基因调整技术最完美的产物。他的反应速度、空间感知能力、学习能力都远超常人。但他最大的力量不是这些——他最大的力量是他拒绝杀戮的决心。\n\n在战争中，他一次次面对以前的同学、朋友、甚至兄弟。每一次战斗都在撕裂他的内心。他不想伤害任何人，但为了保护他爱的人，他必须战斗。\n\n\"我到底在为什么而战？\"\n\n这个问题贯穿了整个故事。基拉的答案是——为了那些他想要保护的人。不是为了主义，不是为了国家，不是为了任何宏大的理想。\n\n只是为了那些他爱的人。\n\n他最终明白了：真正的强大不是你能打败多少人，而是你能保护多少人。\n\n而你，和他一样——你不是为战争而生的，你是为了保护而生的。"},athrun:{n:"阿斯兰·萨拉",g:"m",f:"ZAFT",tt:"夹在忠诚之间的骑士",s:{"loyalty": 9, "bravery": 5, "rebel": 1, "wisdom": 4, "depth": 6, "morals": 6, "adventure": 2, "humor": 1},r:"你是那种被忠诚和信念反复撕裂的人。你对朋友、对组织、对理想都有深深的承诺，但当这些东西互相冲突的时候，你是最痛苦的那个。你不会轻易放弃任何一方，所以你会一直寻找那个让所有人都能接受的答案。",tb:"阿斯兰·萨拉有一个选择，这个选择撕裂了他的一生。\n\n一边是他的父亲、他的祖国、他从小被教导要为之战斗的事业。\n\n另一边是他最好的朋友、他爱的人、他内心深处知道是对的东西。\n\n他没有选错，他也没有选对——他只是在两个他都深爱的事物之间反复挣扎。\n\n阿斯兰是那种把忠诚刻在骨头里的人。他相信命令，相信组织，相信他从小被灌输的一切。但当他发现那些信念和他内心深处的良知发生冲突的时候，他是最痛苦的那个人。\n\n他背叛了ZAFT。他又回去了。他又背叛了。\n\n他不是反复无常——他只是在寻找一个让他能同时忠于所有人的答案。\n\n但那个答案不存在。\n\n在无数次失败之后，阿斯兰终于明白了一件事：你不可能让所有人都满意。你最终必须选择一个——不是选哪一边，而是选择你自己的良知。\n\n他最终做出了选择。不是为ZAFT，不是为地球联合，而是为他自己相信的东西。\n\n而你和他一样——你也是一个在忠诚和良知之间挣扎的人。但你的挣扎本身，就是你最珍贵的东西。"},mu:{n:"穆·拉·弗拉格",g:"m",f:"地球联合军",tt:"笑对死亡的孤鹰",s:{"loyalty": 4, "bravery": 8, "rebel": 4, "wisdom": 5, "depth": 5, "morals": 4, "adventure": 7, "humor": 9},r:"你是那个用笑容掩盖一切的人。你看起来轻松、洒脱、什么都无所谓，但你比谁都清楚自己面对的是什么。你选择了勇敢不是因为不怕，而是因为害怕也没用。你的幽默感是你的铠甲——笑着面对比哭着面对容易得多。",tb:"穆·拉·弗拉格有一个外号叫\"恩底弥翁之鹰\"。\n\n他是地球联合军最出色的机师之一，但他和其他王牌不一样——他总是笑着。\n\n战斗前笑，战斗后笑，面临死亡的时候还是在笑。\n\n这不是因为他不怕。恰恰相反——他比谁都清楚自己面对的是什么。\n\n穆选择用笑容来面对这个世界，因为他知道另一种选择太沉重了。如果他认真起来，如果他让那些失去、那些牺牲、那些他无法保护的人的重量压在自己身上，他可能就无法继续前进了。\n\n所以他笑。他用轻浮的伪装把自己包裹起来，让别人觉得他是一个什么都不在乎的人。\n\n但他比任何人都更在乎。\n\n他保护玛琉，保护大天使号上的每一个人，甚至保护那些他不完全认同的人。在关键时刻，他总是那个冲在最前面的人——不是因为他不怕死，而是因为他知道有人在等他回来。\n\n\"我会回来的。\"\n\n说这句话的时候，他可能自己都不太相信。但他说了，因为他知道有人需要听到这句话。\n\n而你和他一样——你也用某种方式在面对这个世界的重量。也许你是用幽默，也许你是用忙碌，也许你是用某种别人看不懂的执念。\n\n但你的内心比看起来柔软得多。"},andrew:{n:"安德鲁·巴尔特菲尔德",g:"m",f:"ZAFT",tt:"沙漠中最后的绅士",s:{"loyalty": 5, "bravery": 7, "rebel": 3, "wisdom": 6, "depth": 6, "morals": 7, "adventure": 6, "humor": 5},r:"你是一个有风骨的人。你尊重对手，珍惜朋友，即便在战争中也不丢掉自己的底线。你的魅力不在于你多强，而在于你即使在最残酷的环境中，依然保持着作为一个人的尊严和温柔。",tb:"安德鲁·巴尔特菲尔德有一个外号叫\"沙漠之虎\"。\n\n他是ZAFT最出色的地面指挥官之一，但他最让人记住的不是他的战术才能——而是他的风度。\n\n他尊重对手。他在战斗后给阵亡的敌人倒一杯酒。他在战场上也会停下来和基拉聊聊关于战斗的意义。\n\n在那个所有人都在把人当成敌人的战争里，安德鲁是唯一一个还记得敌人也是人的人。\n\n他有一个叫爱莎的恋人。他们在战争中相爱，在战火中相守。安德鲁在战场上是凶猛的老虎，但在爱莎面前，他是一个温柔的男人。\n\n但战争没有放过他。\n\n安德鲁的故事是关于在残酷中保持尊严的故事。他知道战争的丑陋，知道仇恨的力量，知道在这个世界里做一个\"好人\"有多难。\n\n但他依然选择了那样做。\n\n不是因为他是圣人，而是因为如果他放弃了那份尊严，他就真的和那些他战斗的人没有区别了。\n\n而你和他一样——你也在某个战场上努力保持着某种别人可能不理解的东西。那份坚持，就是你的风度。"},rau:{n:"劳·鲁·克鲁泽",g:"m",f:"ZAFT",tt:"面具下的虚无",s:{"loyalty": 1, "bravery": 3, "rebel": 7, "wisdom": 9, "depth": 6, "morals": 1, "adventure": 3, "humor": 1},r:"你看到了这个世界最残酷的真相——人类永远学不会和平相处。你不是天生的坏人，你是一个对人性彻底失望的人。你的智慧让你看清了一切，但也正是这份清醒让你陷入了最深的绝望。你选择毁灭，是因为你不再相信创造的可能性。",tb:"劳·鲁·克鲁泽总是戴着面具。\n\n没有人见过他的真面目——或者说，没有人真正想看到他的真面目。\n\n克鲁泽是这个故事里最复杂的人。他不是天生的坏人。他是一个被这个世界的残酷逼到绝望的人。\n\n他看透了人性的本质——人类永远在争夺、在伤害、在重复同样的错误。他看到的不是某一个人的恶，而是整个物种的恶。\n\n\"你们以为自己在为正义而战？你们只是在为自己的欲望找借口。\"\n\n克鲁泽的悲剧在于：他看得太清楚了。他看到了真相，但他选择用那个真相来合理化自己的疯狂。如果人类本质上是恶的，那毁灭人类就不是罪恶——而是仁慈。\n\n这种逻辑是危险的。但不是没有道理的。\n\n你也许不是克鲁泽。但你可能在某些时刻，也有过那种\"看透了\"的瞬间——当你发现这个世界不是你想象的那样，当你发现善良没有回报、努力没有结果、真心被践踏。\n\n那种瞬间的绝望，克鲁泽把它变成了毁灭。\n\n但你没有。这就是你和他的区别。"},flay:{n:"芙蕾·阿尔斯塔",g:"f",f:"大天使号",tt:"被仇恨吞噬的少女",s:{"loyalty": 2, "bravery": 2, "rebel": 5, "wisdom": 2, "depth": 9, "morals": 1, "adventure": 2, "humor": 1},r:"你经历过失去，那种痛改变了一切。你不再是从前那个单纯的自己了，愤怒和悲伤让你做出了一些连自己都无法理解的选择。你不是坏人，你只是一个被伤害太深、不知道该怎么 healing 的人。",tb:"芙蕾·阿尔斯塔是一个被战争摧毁的女孩。\n\n她原本只是一个普通的学生，和基拉他们一样。然后她的父亲死了——在她面前，被ZAFT的炮火杀死。\n\n从那一刻起，芙蕾不再是那个天真烂漫的女孩了。\n\n她开始恨ZAFT。她开始利用基拉。她做了一些她自己都无法原谅的事情。\n\n芙蕾不是坏人。她只是一个被痛苦逼到疯狂的人。她用仇恨来填补失去父亲的空洞，她用愤怒来掩盖内心的恐惧和悲伤。\n\n\"你为什么没有救他？！\"\n\n她对着基拉喊出这句话的时候，其实不是在质问他——她是在质问命运，质问世界，质问为什么这一切会发生。\n\n芙蕾的故事是关于一个人在极端痛苦中迷失自我的故事。她做了错误的选择，伤害了无辜的人，包括她自己。\n\n但即使在最黑暗的时候，她内心深处依然是那个需要被保护的小女孩。\n\n而你也许经历过类似的时刻——当失去让你变得不再是自己，当愤怒让你做出后悔的事。\n\n芙蕾提醒我们：痛苦可以改变一个人，但被痛苦定义，是最大的悲剧。"},izaku:{n:"伊扎克·玖尔",g:"m",f:"ZAFT",tt:"骄傲的红色彗星",s:{"loyalty": 7, "bravery": 9, "rebel": 2, "wisdom": 2, "depth": 5, "morals": 4, "adventure": 5, "humor": 1},r:"你是一个骄傲到骨子里的人。你不屑于掩饰自己的情绪，喜欢就是喜欢，讨厌就是讨厌。你的忠诚是纯粹的——一旦你认可了某个人或某个信念，你会为之战斗到底。你的弱点是太在乎输赢，但这也是你最可爱的地方。",tb:"伊扎克·玖尔是那种骄傲到骨子里的人。\n\n他是ZAFT最年轻的精英机师，自信、强势、从不掩饰自己的锋芒。他讨厌失败，讨厌被看不起，更讨厌别人比他强。\n\n在故事开始的时候，他是基拉最大的敌人之一。他驾驶着决斗高达，一次次和基拉交锋，一次次被打败，然后一次次变得更加愤怒。\n\n伊扎克的愤怒来自于他的骄傲。他不接受自己不是最强的这个事实。\n\n但伊扎克不是坏人。他的骄傲底下藏着一颗忠诚的心。他忠于他的战友，忠于他的信念，忠于他自己。\n\n随着故事的发展，伊扎克经历了改变。他学会了承认自己的局限，学会了和曾经被他看不起的人并肩作战。他的脸上多了一道疤——不是耻辱的标记，而是成长的印记。\n\n伊扎克的故事是关于一个人如何学会从骄傲走向谦逊的故事。\n\n他不是变弱了——他是变强了。因为他终于明白：真正的强大不是打败所有人，而是承认自己不完美。\n\n而你和他一样——你也有那份骄傲，那份不肯认输的劲儿。但也许有一天，你会发现：承认自己的不完美，恰恰是你最强大的时刻。"},dearka:{n:"迪亚哥·艾尔斯曼",g:"m",f:"ZAFT",tt:"最先看清真相的聪明人",s:{"loyalty": 3, "bravery": 5, "rebel": 5, "wisdom": 7, "depth": 5, "morals": 4, "adventure": 5, "humor": 6},r:"你是那种比周围人更早看清局势的人。你不会盲从，不会轻信，你会自己思考、自己判断。你的适应能力很强，当发现原有的信念站不住脚时，你有勇气做出改变。你不太喜欢表露内心，但你的内心比看起来柔软得多。",tb:"迪亚哥·艾尔斯曼是伊扎克的搭档，但他们是完全不同的人。\n\n伊扎克是火，迪亚哥是水。伊扎克永远在战斗，迪亚哥永远在观察。\n\n迪亚哥是ZAFT的精英机师，但他没有伊扎克那种对战斗的狂热。他更像是一个被迫上了战场的聪明人——他知道自己在做什么，但他不确定自己该做什么。\n\n迪亚哥的转变是渐进的。当他被大天使号俘虏后，他看到了战争的另一面。他看到了地球联合军的士兵也是人，看到了ZAFT的宣传和现实之间的差距，看到了这场战争中没有真正的正义方。\n\n他选择改变立场。不是因为被说服了，而是因为他自己想明白了。\n\n迪亚哥的故事是关于一个独立思考者的故事。他没有被忠诚绑架，没有被仇恨蒙蔽，他没有盲从任何人的命令。他用自己的眼睛去看，用自己的脑子去想，然后做出了自己的选择。\n\n在这个满是狂热信徒的世界里，迪亚哥是那个保持清醒的人。\n\n而你和他一样——你也不会轻易相信别人告诉你的\"真相\"。你会自己去看，自己去想，然后做出属于你自己的判断。"},murrue:{n:"玛琉·拉米亚斯",g:"f",f:"大天使号舰长",tt:"暴风雨中的掌舵者",s:{"loyalty": 7, "bravery": 6, "rebel": 1, "wisdom": 7, "depth": 5, "morals": 6, "adventure": 3, "humor": 2},r:"你是一个在风暴中依然能保持冷静的人。你肩上扛着整艘船的重量，但你从不抱怨。你的坚韧不是天生的，是在一次次失去和重来中磨练出来的。你相信责任，相信承诺，相信哪怕在最黑暗的时候也要做出正确的选择。",tb:"玛琉·拉米亚斯是大天使号的舰长。\n\n她不是天生的领导者。她是一个被命运推到那个位置的普通人——一群普通人的船长，带着一群不懂战争的孩子，在一场他们完全不了解的战争中求生。\n\n玛琉的压力是巨大的。她要对船上每一个人的命负责。每一次决定都可能是生与死的分界线。每一次战斗都可能意味着失去她最在乎的人。\n\n但她从来没有放弃。\n\n玛琉的力量不是她的军事才能——她的力量是她的坚韧。在所有人都绝望的时候，她依然在指挥。在所有人都崩溃的时候，她依然在坚持。\n\n她和穆之间的感情是这个故事里少有的温柔。两个被战争裹挟的成年人，在枪炮声中找到了一点点属于他们自己的东西。\n\n但战争没有给他们太多时间。穆走了，又回来了，又走了。\n\n玛琉一直在等。不是因为她相信他会回来——而是因为等，是她唯一能为他做的事。\n\n而你和她一样——你也是一个在风暴中掌舵的人。你不一定是船长，但你一定在某个时刻，为某个团体、某个人、某件事扛起了责任。\n\n那种重量，别人看不到。但你知道。"},neo:{n:"尼奥·罗亚诺克",g:"m",f:"地球联合军/幻痛",tt:"遗忘过去的幻影",s:{"loyalty": 1, "bravery": 7, "rebel": 5, "wisdom": 4, "depth": 5, "morals": 3, "adventure": 8, "humor": 5},r:"你失去了最重要的东西——记忆。你不知道自己是谁，不知道自己从哪里来，不知道自己在为什么而战。但即便如此，你依然在本能地保护着什么、寻找着什么。你的故事是关于身份的——当一切都被剥夺之后，你剩下的那部分才是真正的你。",tb:"尼奥·罗亚诺克是一个没有过去的人。\n\n他不知道自己是谁，不知道自己从哪里来，不知道自己曾经爱过谁、保护过谁、承诺过什么。他的大脑被重置了，他被变成了另一个人——地球联合军幻痛部队的指挥官。\n\n但有些东西是重置不了的。\n\n他会在不经意间说出一些他\"不应该\"知道的话。他会在某个瞬间感到一种莫名的熟悉感。他会在梦中看到一些他不认识但感觉非常亲近的面孔。\n\n尼奥是穆·拉·弗拉格的另一种存在。同样的灵魂，不同的记忆。同样的本能——在关键时刻保护那些他在乎的人——即使他不知道自己为什么要在乎。\n\n他的故事是关于身份的故事。如果你失去了所有记忆，你还你是谁？如果你的名字被换了，你的过去被抹掉了，你的承诺被遗忘了——你内心深处那个最本质的东西，还在吗？\n\n尼奥的故事告诉我们：真正的你不是你的名字，不是你的过去，不是你被教导要成为的那个人。\n\n真正的你，是那个在所有东西都被剥夺之后，依然剩下的东西。\n\n而你也许也有过那种\"不知道自己是谁\"的时刻。但你的本能、你的直觉、你内心深处的某个声音——它们一直在告诉你答案。"},shinn:{n:"真·飞鸟",g:"m",f:"ZAFT",tt:"被火焰吞噬的少年",s:{"loyalty": 4, "bravery": 9, "rebel": 4, "wisdom": 1, "depth": 6, "morals": 3, "adventure": 6, "humor": 1},r:"你是一个被过去困住的人。失去亲人的痛苦在你心里烧成了一团火，这团火给了你力量，但也烧毁了你的判断力。你做事冲动、直接、不计后果，不是因为你不聪明，而是因为你的情绪太强烈了。你的成长之路就是学会把那团火变成光，而不是让它烧掉你自己和身边的人。",tb:"真·飞鸟失去了妹妹。\n\n在奥布的战场上，他和妹妹在混乱中被分开。等他找到她的时候，她已经死了。一个他根本不认识的人的战争，夺走了他唯一的家人。\n\n从那一刻起，真的人生只剩下一件事——战斗。\n\n他不是基拉那种温柔的人。他是愤怒的化身。他把所有的痛苦、所有的悲伤、所有的无力感都变成了战斗的动力。\n\n真驾驶着脉冲高达，一次次冲在最前面。他不是为了保护什么——他是为了毁掉那些让他痛苦的东西。\n\n但他的愤怒是有代价的。\n\n真因为愤怒而做出错误的判断，因为愤怒而伤害了身边的人，因为愤怒而变成了他自己都不认识的那种人。他以为自己是在为妹妹复仇，但其实他只是被自己的仇恨吞噬了。\n\n真的故事是关于一个被火焰吞噬的少年的故事。\n\n那团火给了他力量，但也烧毁了他的理智。\n\n而你也许也有过那种被某种情绪燃烧的时刻。愤怒、悲伤、不甘——这些都是火。关键不是你有没有火，而是你用它来照亮还是毁灭。"},rey:{n:"雷·扎·巴雷尔",g:"m",f:"ZAFT",tt:"影子中的人",s:{"loyalty": 9, "bravery": 4, "rebel": 1, "wisdom": 6, "depth": 6, "morals": 4, "adventure": 1, "humor": 1},r:"你是一个活在他人的阴影里的人。你把全部的忠诚和信念都交给了一个你认为比自己更伟大的人，但在那份忠诚的背后，隐藏着一个迷茫的灵魂。你在寻找自己的意义，但也许你还没有勇气面对那个问题——如果没有了那份信仰，你还剩什么？",tb:"雷·扎·巴雷尔是一个活在别人阴影里的人。\n\n他是杜兰朵议长最忠诚的执行者。他相信议长的一切——他的理念、他的计划、他的\"命运计划\"。\n\n但在那份忠诚的背后，隐藏着巨大的空虚。\n\n雷不知道自己在为什么而战。他为议长而战，因为他不知道除此之外还有什么可相信的。他的整个人生都是在为别人的理想服务——他从来没有问过自己：我想要什么？\n\n雷和真是朋友，但他们的友谊被忠诚扭曲了。雷利用真，不是因为他是坏人，而是因为他自己也在被利用。他是一面镜子——反映着别人的意志，却没有自己的影像。\n\n雷的故事是关于寻找自我的故事。\n\n也许我们每个人在某些时刻都是雷——为父母的期望而活，为社会的标准而活，为别人的评价而活。我们做了所有\"正确\"的事，但我们从来没有问过自己：这是我真正想要的吗？\n\n雷最终觉醒得太晚了。\n\n但你还有机会。你现在就在问这个问题——这说明你比雷勇敢。"},durandal:{n:"吉尔伯特·杜兰朵",g:"m",f:"PLANT议长",tt:"用命运编织的棋手",s:{"loyalty": 1, "bravery": 4, "rebel": 6, "wisdom": 9, "depth": 6, "morals": 1, "adventure": 2, "humor": 2},r:"你是一个天生的棋手。你看到的世界是棋盘，每个人都是棋子——包括你自己。你的智慧和远见让你能够规划一切，但你最终可能忽略了一个事实：人不是棋子，人心是无法被计算的。你最大的悲剧在于：你太聪明了，聪明到忘记了自己也是个人。",tb:"吉尔伯特·杜兰朵是PLANT的最高领导人。\n\n他是一个天才——不是那种在某一方面出色的天才，而是那种能看透全局、规划一切、操纵所有人的天才。\n\n杜兰朵提出了\"命运计划\"——一个由基因决定每个人人生道路的系统。在这个系统里，每个人从出生开始就知道自己要做什么、能做什么、应该成为什么样的人。\n\n听起来很可怕，对吧？\n\n但杜兰朵不是疯了。他是太清醒了。他看到了人类几千年的历史——战争、仇恨、重复同样的错误。他得出结论：人类的自由意志正是所有问题的根源。\n\n\"如果每个人都走在命中注定的道路上，就不会有冲突，不会有痛苦，不会有战争。\"\n\n这是疯狂的。但疯狂和天才之间只有一线之隔。\n\n杜兰朵的悲剧在于：他试图用理性解决人性的问题。他忘记了人之所以为人，恰恰是因为我们有选择的自由——即使是做出错误选择的自由。\n\n而你和他一样——你也在寻找答案。但你没有走他那条路，因为你相信：人不是棋子，人心是无法被计算的。"},lacus:{n:"拉克丝·克莱茵",g:"f",f:"PLANT/三舰同盟",tt:"歌声中的革命者",s:{"loyalty": 4, "bravery": 5, "rebel": 6, "wisdom": 8, "depth": 6, "morals": 8, "adventure": 3, "humor": 3},r:"你比大多数人都看得更远、想得更深。你的力量不在于你多强，而在于你能看到别人看不到的可能性。你选择用温柔的方式去改变世界——不是用枪和拳头，而是用理解和信念。你的勇敢不是冲上去战斗，而是在所有人都觉得不可能的时候，依然选择相信。",tb:"拉克丝·克莱茵是一个歌手。\n\n但在歌声的背后，她是一个革命者。\n\n她是PLANT前议长的女儿，是这个世界上最有权势的人之一。但她选择了背叛自己的阶级——她离开了PLANT，加入了三舰同盟，站在了战争的最前线。\n\n不是因为仇恨，不是因为复仇，而是因为她看到了一个别人都不愿意看的事实：这场战争没有正义的一方。\n\n地球联合和ZAFT都在为自己的利益而战。两边都在用\"正义\"的名义做不正义的事。两边都在牺牲无辜的人。\n\n拉克丝选择了第三条路——不是战斗，而是理解。不是用枪炮，而是用歌声。\n\n听起来天真？也许是。但拉克丝的天真是最有力量的武器。在所有人都认为\"必须有一方被打败\"的时候，她是唯一一个说\"我们不需要打败任何人\"的人。\n\n她不是傻瓜。她知道这条路有多难。但她知道，如果连尝试都不尝试，那就真的没有希望了。\n\n而你和她一样——你也在某个时刻选择了那条看起来最天真的路。不是因为你不聪明，而是因为你比大多数人都看得更远。"},cagalli:{n:"卡嘉莉·尤拉·阿斯哈",g:"f",f:"奥布",tt:"沙漠中的烈焰",s:{"loyalty": 5, "bravery": 9, "rebel": 5, "wisdom": 2, "depth": 5, "morals": 6, "adventure": 7, "humor": 5},r:"你是一个用行动说话的人。你不擅长拐弯抹角，想到什么就做什么，但你的冲动背后是一颗真诚到骨子里的心。你为了自己在乎的人和国家可以付出一切。你的成长就是从一匹独狼变成一个真正的领导者——学会不仅仅是战斗，而是守护。",tb:"卡嘉莉·尤拉·阿斯哈是奥布首长乌兹米·尤拉·阿斯哈的女儿。\n\n但她不是一个温室里的公主。\n\n她在沙漠里长大，拿着枪，穿着男式的衣服，和反ZAFT的游击队一起战斗。她第一次遇到阿斯兰的时候，是在战场上——两个敌对阵营的年轻人，在炮火中相遇。\n\n卡嘉莉是这个故事里最直接的人。她想到什么就做什么，喜欢谁就表现给谁看，讨厌谁就当面说出来。她不擅长外交，不擅长妥协，不擅长那些需要拐弯抹角的事情。\n\n但她的真诚恰恰是她最大的力量。\n\n卡嘉莉继承了父亲的意志——奥布的理念：不参与任何战争，保持中立，保护每一个寻求庇护的人。\n\n但她发现，在这个世界里，保持中立比参战更难。所有人都想利用你，所有人都想拉你入伙，所有人都觉得你的原则是天真。\n\n卡嘉莉学会了不仅仅是战斗——她学会了守护。从一匹独狼到一个国家的领导者，这条路她走得很辛苦。\n\n而你和她一样——你也是一个用行动说话的人。你不擅长花言巧语，但你在乎的东西，你会用一切去保护。"},meer:{n:"蜜雅·坎贝尔",g:"f",f:"PLANT",tt:"镜子里的影子",s:{"loyalty": 2, "bravery": 3, "rebel": 3, "wisdom": 2, "depth": 8, "morals": 4, "adventure": 4, "humor": 6},r:"你是一个活在别人期待里的人。你被选中去扮演另一个角色，一开始你可能觉得兴奋，但渐渐地你发现那不是真正的自己。你内心的挣扎是——你渴望被爱、被认可，但你不确定别人爱的是你还是你扮演的角色。你的故事是关于寻找真实的自己。",tb:"蜜雅·坎贝尔是一个普通的女孩。\n\n她长得像拉克丝·克莱茵。不是因为巧合——她的声音、她的身形、她的面容，都是被\"选中\"的。\n\n她被要求扮演拉克丝。不是模仿——是成为她。穿着她的衣服，唱她的歌，说她的话。\n\n一开始，蜜雅觉得这是一件很酷的事。她可以成为那个所有人都爱着的人。她可以站在聚光灯下，被掌声和欢呼包围。\n\n但渐渐地，她发现了残酷的真相：没有人爱她。所有人爱的都是她扮演的角色。\n\n\"你到底是谁？\"有人问她。\n\n她不知道该怎么回答。\n\n蜜雅的故事是关于身份和自我价值的故事。我们很多人都在某种程度上是蜜雅——我们在社交媒体上扮演某种角色，在工作中扮演某种角色，在家庭中扮演某种角色。\n\n我们得到了关注和认可，但我们不确定那是给我们的还是给我们扮演的角色的。\n\n蜜雅最终找到了真实的自己——代价太大了。\n\n但你不需要付出那个代价。你现在就可以问自己：如果所有角色都被剥掉，我还剩什么？\n\n那个答案，就是真正的你。"},lunamaria:{n:"露娜玛丽亚·霍克",g:"f",f:"ZAFT",tt:"在忠诚与真相之间",s:{"loyalty": 7, "bravery": 6, "rebel": 2, "wisdom": 4, "depth": 5, "morals": 5, "adventure": 4, "humor": 5},r:"你是一个忠诚但并非盲从的人。你相信规则，相信秩序，相信服从是正确的选择——直到有一天你发现规则本身就是错的。你的痛苦在于你不是一个轻易怀疑的人，所以当怀疑来临的时候，它会动摇你的一切。但你的勇敢在于你最终会选择真相，即使真相意味着背叛你曾经相信的一切。",tb:"露娜玛丽亚·霍克是ZAFT的红衣精英。\n\n她驾驶着脉冲高达的支援机，是真·飞鸟最可靠的搭档。她和妹妹美玲一起参军，为ZAFT而战。\n\n露娜玛丽亚是一个忠诚的人。她相信ZAFT的事业，相信上级的命令，相信自己在做正确的事。\n\n但忠诚有时候是危险的。\n\n当她发现ZAFT的高层在操纵战争，当她发现真被利用，当她发现她效忠的那些人根本不是她以为的样子——她的整个世界崩塌了。\n\n露娜玛丽亚的转变不是突然的。她经历了怀疑、否认、痛苦、愤怒。她试图相信一切还是正常的，试图找到解释，试图说服自己她一直以来相信的东西是对的。\n\n但最终，她选择了真相。\n\n她背叛了ZAFT——不是因为她是叛徒，而是因为她终于看清了什么是真正的忠诚。忠诚不是对组织的盲从，忠诚是对真相的坚持。\n\n而你和她一样——你也是一个忠诚的人。但当忠诚和真相发生冲突的时候，你有勇气选择真相。"},stella:{n:"史黛拉·鲁西耶",g:"f",f:"地球联合军/幻痛",tt:"被武器化的孩子",s:{"loyalty": 3, "bravery": 5, "rebel": 1, "wisdom": 1, "depth": 6, "morals": 5, "adventure": 4, "humor": 3},r:"你是一个被剥夺了选择权的人。你本不该出现在战场上，你本该有一个正常的人生。但命运把你变成了武器，一个被操控的、不知道自己为什么在战斗的孩子。你的内心依然柔软，依然渴望被爱——这份纯真恰恰是这个世界最残忍的东西。",tb:"史黛拉·鲁西耶不应该出现在战场上。\n\n她是一个普通的女孩，被地球联合军的\"生化CPU\"计划改造成了一个武器。她被注射药物，被洗脑，被剥夺了正常的情感和判断力。\n\n她变成了一个不稳定的、强大的、不知道自己为什么在战斗的机器。\n\n但在那个被改造过的大脑下面，依然有一个害怕的、孤独的、想回家的小女孩。\n\n真遇到了她。两个被战争伤害的人在彼此身上找到了一丝温暖。史黛拉只有在真面前才会变回那个真正的自己——一个会害怕、会哭、会笑的普通女孩。\n\n但战争没有放过她。\n\n她被送上战场，一次又一次。她被当作武器使用，被当作棋子消耗。她不知道自己在为谁而战，不知道自己要保护什么。\n\n她只是被利用。\n\n史黛拉的故事是整个SEED系列最令人心碎的部分。她提醒我们：在战争的数字和策略背后，是一个个被剥夺了选择权的人。\n\n而你和她一样——你可能也曾经觉得自己被某种力量推着走，觉得自己没有选择。\n\n但史黛拉的故事告诉你：那份想回家的渴望，那份对温暖的向往——那就是你还没有被完全剥夺的东西。"},taliaz:{n:"塔莉娅·格拉蒂斯",g:"f",f:"密涅瓦号舰长",tt:"铁面下的柔情",s:{"loyalty": 8, "bravery": 5, "rebel": 1, "wisdom": 7, "depth": 5, "morals": 5, "adventure": 2, "humor": 1},r:"你是一个把感情藏在制服下面的人。你的职责要求你冷静、果断、不偏不倚，但你心里比谁都清楚什么是对什么是错。你在职责和良知之间反复挣扎——作为军人，你的任务是服从；作为人，你知道有些事情不能就这样接受。",tb:"塔莉娅·格拉蒂斯是密涅瓦号的舰长。\n\n她是一个军人——不是那种热血的、喊着口号冲锋的军人，而是那种冷静、专业、一丝不苟的军人。\n\n塔莉娅穿着整洁的制服，用清晰的指令指挥着她的船。她不表达个人观点，不参与政治讨论，不质疑上级的命令。\n\n但你不表达不代表你没有观点。\n\n塔莉娅看到了杜兰朵议长的计划有问题。她知道\"命运计划\"是危险的。她知道这场战争正在走向一个所有人都无法控制的方向。\n\n但她是一个军人。军人的天职是服从。\n\n她的内心在撕扯。一方面，她的职责要求她执行命令。另一方面，她的良知告诉她有些事情不能就这样接受。\n\n塔莉娅最终做出了选择——虽然那个选择来得太晚了。\n\n她的故事是关于那些在体制内挣扎的人的故事。你不是反叛者，你不是英雄，你只是一个试图在规则内做正确事情的普通人。\n\n但有时候，做正确的事情意味着打破规则。\n\n而你也许也有过那种时刻——在职责和良知之间，你选择了良知。"},meyrin:{n:"美玲·霍克",g:"f",f:"ZAFT/密涅瓦号",tt:"战争中最普通的眼睛",s:{"loyalty": 5, "bravery": 3, "rebel": 2, "wisdom": 5, "depth": 5, "morals": 5, "adventure": 3, "humor": 5},r:"你不是英雄，不是反派，你是一个在战争中努力做正确选择的普通人。你看到了太多不该看到的事情，经历了太多不该经历的事情。你没有超能力，没有驾驶高达的本事，但你在用自己的方式活着——在一个不允许普通人生存的世界里，做一个普通人本身就是一种勇敢。",tb:"美玲·霍克是露娜玛丽亚的妹妹。\n\n她不是王牌机师，不是指挥官，不是任何重要人物。她只是密涅瓦号上的一个操作员——一个在控制台后面按按钮的人。\n\n但正是这个\"不重要\"的人，有着最重要的一双眼睛。\n\n美玲看到了战争中最真实的一面。她不是在前线战斗的人，她是在后面看着数据、听着报告、观察着每一个人的人。\n\n她看到真变得越来越愤怒，看到雷变得越来越冷漠，看到塔莉娅舰长越来越沉默。她看到了一个团队在战争的重量下慢慢瓦解。\n\n美玲没有超能力，没有驾驶高达的本事，没有拯救世界的能力。她只是一个在战争中努力做正确选择的普通人。\n\n但她选择了。当发现ZAFT的方向是错的时候，她帮助了那些她认为是对的人。\n\n在那个不允许普通人生存的世界里，做一个普通人本身就是一种勇敢。\n\n而你就是那种人——你可能觉得自己不够特别、不够强大、不够重要。但你的善良、你的观察、你在关键时刻做出的那些小选择——它们比你想的重要得多。"},miriallia:{n:"米丽雅莉亚·哈乌",g:"f",f:"大天使号",tt:"战火中依然微笑的人",s:{"loyalty": 6, "bravery": 3, "rebel": 2, "wisdom": 4, "depth": 5, "morals": 7, "adventure": 3, "humor": 8},r:"你是一个温柔的人，温柔到在这个残酷的世界里显得格格不入。你经历过战争的恐怖，失去了重要的人，但你选择了不让自己变得冷酷。你依然在笑，依然在意身边的人，依然相信美好。这不是天真——在经历了这么多之后依然选择温柔，才是真正的勇敢。",tb:"米丽雅莉亚·哈乌是基拉最好的朋友之一。\n\n她是一个温柔的人。温柔到在这个残酷的世界里显得格格不入。\n\n当战争夺走了托尔——她爱的人——的时候，她有所有的理由变得冷酷。她可以恨ZAFT，恨基拉，恨这场战争中的一切。\n\n但她选择了另一条路。\n\n米丽依然温柔，依然在笑，依然在意身边的人。她没有让仇恨改变她。\n\n这不是因为她天真——恰恰相反。在经历了这么多之后依然选择温柔，这才是最难的。\n\n恨是容易的。愤怒是容易的。变得冷酷是容易的。\n\n保持温柔才是最勇敢的事。\n\n米丽的故事是关于一个人如何在经历了最黑暗的事情之后，依然选择做一束光。\n\n她不是英雄，她没有拯救任何人。但她用她的存在证明了：即使在战争中最黑暗的时刻，温柔依然是一种力量。\n\n而你和她一样——你也许经历过让你变得冷酷的事，但你选择了不那样做。\n\n你依然在笑，依然在关心，依然在相信。这不是天真——这是你最大的勇气。"},mayura:{n:"玛尤拉·拉巴塔·弗拉格",g:"f",f:"奥布",tt:"继承父亲意志的女儿",s:{"loyalty": 5, "bravery": 5, "rebel": 4, "wisdom": 4, "depth": 6, "morals": 5, "adventure": 4, "humor": 4},r:"你是一个活在父辈阴影下的人。你继承了某种使命、某种期望，但你还不确定那是不是你真正想要的。你在寻找自己的声音——不是父亲的声音，不是组织的期望，而是你自己的。这条路不好走，但你在走。",tb:"玛尤拉·拉巴塔·弗拉格是穆·拉·弗拉格的女儿。\n\n这个名字背后是一份沉重的遗产。\n\n穆是一个英雄——在所有人记忆中的英雄。他用生命保护了大天使号，用生命保护了玛琉，用生命证明了一个人的勇敢可以改变一场战争。\n\n但玛尤拉失去的是父亲。不是一个英雄，不是\"恩底弥翁之鹰\"，而是一个会笑、会开玩笑、会在关键时刻说\"我会回来的\"的男人。\n\n她继承了父亲的意志。但不是因为他告诉她要这样做——因为他没有机会告诉她任何事。\n\n她继承，是因为那是她唯一能和父亲保持联系的方式。\n\n玛尤拉的故事是关于活在父辈阴影下的人的故事。你继承了某种使命、某种期望，但你还不确定那是不是你真正想要的。\n\n你在寻找自己的声音——不是父亲的声音，不是别人的期望，而是你自己的。\n\n这条路不好走。但你在走。\n\n而那个你正在成为的人——他既继承了过去的重量，又拥有未来的可能性。"},nicol:{n:"尼高尔·阿玛菲",g:"m",f:"ZAFT",tt:"钢琴少年的挽歌",s:{"loyalty": 6, "bravery": 3, "rebel": 2, "wisdom": 4, "depth": 6, "morals": 7, "adventure": 2, "humor": 6},r:"你是一个温柔而有才华的人。你不喜欢争斗，你更喜欢安静地做自己喜欢的事——弹钢琴、看书、享受一个人的时光。但有时候生活会把你推到你不想要的战场上，而你依然会用你的方式去面对。",tb:"尼高尔·阿玛菲是阿斯兰的战友。\n\n但他和其他ZAFT的精英不一样。他不热衷于战斗，不渴望胜利，不在乎军衔和荣誉。\n\n他喜欢弹钢琴。\n\n在战争的间隙，尼高尔会坐在钢琴前，用他那双能精确操控机动战士的手指，在琴键上流淌出温柔的旋律。\n\n他的存在提醒着所有人——即使在战争中，美好依然存在。\n\n但战争不会放过一个钢琴师。\n\n尼高尔在战斗中被基拉杀死了。一个喜欢音乐、喜欢和平、不想伤害任何人的少年，死在了他不想参与的战争里。\n\n他的死改变了很多人的命运。伊扎克因为他的死变得更加愤怒。阿斯兰因为他的死更加质疑这场战争。基拉因为他的死更加痛苦——又一次，他不得不杀死一个他不想杀的人。\n\n尼高尔的故事是关于那些被战争吞噬的美好事物的故事。\n\n不是每个死在战场上的人都想战斗。有些只是想在和平的环境里，做自己喜欢的事。\n\n而你也许也是那种人——你不想争斗，不想竞争，不想赢。你只是想做你喜欢的事，爱你爱的人。\n\n这没有错。这是最正确的事。"},tolle:{n:"托尔·库尼希",g:"m",f:"大天使号",tt:"普通人的勇气",s:{"loyalty": 7, "bravery": 6, "rebel": 2, "wisdom": 3, "depth": 5, "morals": 7, "adventure": 4, "humor": 9},r:"你是一个普通人，但你比大多数人都勇敢。你没有超能力，没有显赫的背景，你只是想在在乎的人身边。当危险来临的时候，你不会计算得失，你会直接冲上去——不是因为你不怕，而是因为你不能看着他们受伤。",tb:"托尔·库尼希是基拉最好的朋友。\n\n他不是调整者，不是机师，不是军人。他只是一个普通的学生——喜欢拍照，喜欢和朋友在一起，喜欢那个叫米丽的女孩。\n\n当战争爆发的时候，托尔没有选择。他被卷入了大天使号，被迫离开了家，被迫面对他完全不理解的世界。\n\n但他没有逃跑。\n\n托尔在大天使号上做着他能做的事。他帮忙、他鼓励别人、他努力让每个人都保持希望。他知道自己不是英雄，但他觉得英雄也需要普通人。\n\n直到那一天。\n\n伊扎克的攻击摧毁了他所在的区域。托尔死了——不是因为他做错了什么，不是因为他不够勇敢，只是因为他出现在了错误的地方。\n\n托尔的死是一个普通人的死的缩影。在战争的宏大叙事中，大多数人不是英雄也不是反派——他们只是不幸在场的人。\n\n但托尔的\"普通\"恰恰是他最不普通的地方。在所有人都被恐惧压倒的时候，他依然保持着希望。\n\n而你也许也是那个\"普通\"的人。但记住——普通从来不意味着不重要。"},sai:{n:"赛依·阿盖尔",g:"m",f:"大天使号",tt:"旁观者的觉醒",s:{"loyalty": 4, "bravery": 1, "rebel": 3, "wisdom": 6, "depth": 6, "morals": 5, "adventure": 2, "humor": 4},r:"你不是天生的英雄。你更习惯站在旁边观察、思考、分析。你有时会因为犹豫而错过时机，但这不代表你软弱——你只是需要时间去理解、去接受、去做出属于自己的选择。",tb:"赛依·阿盖尔是基拉的朋友。\n\n但他不是一直都有勇气的那种朋友。\n\n当战争爆发的时候，赛依害怕了。他不是像基拉那样能立刻拿起武器的人。他不是像托尔那样能立刻找到自己能做的事的人。\n\n他只是在旁边看着——看着基拉战斗，看着托尔帮忙，看着米丽坚强。\n\n赛依的挣扎是真实的。他不是不想帮忙——他是不知道自己能帮什么。他觉得自己不如别人，觉得自己在战争中是多余的。\n\n但赛依最终找到了自己的位置。他学会了操作，学会了通讯，学会了在这个团队中找到自己能做的事。\n\n他的成长是缓慢的，是犹豫的，是不自信的。\n\n但那恰恰是最真实的成长。\n\n不是每个人都能在一瞬间变成英雄。大部分人是在犹豫、恐惧和自我怀疑中，一点一点地找到自己的力量。\n\n而你就是那种人——你可能觉得你不够快、不够勇敢、不够决断。\n\n但你一直在前进。缓慢但坚定。这就是你的力量。"},arnold:{n:"阿诺德·诺依曼",g:"m",f:"大天使号",tt:"沉默的舵手",s:{"loyalty": 6, "bravery": 5, "rebel": 1, "wisdom": 7, "depth": 5, "morals": 5, "adventure": 3, "humor": 3},r:"你是一个安静但可靠的人。你不太会说漂亮话，但你说到做到。在团队中你通常不是最抢眼的那个，但每个人都信赖你。你的力量在于稳定——在风暴中，你是那个稳住方向盘的人。",tb:"阿诺德·诺依曼是大天使号的舵手。\n\n他不是主角，不是王牌机师，不是任何英雄人物。他只是一个在控制台上操作的人。\n\n但他是最好的。\n\n在无数次战斗中，阿诺德的手稳稳地控制着大天使号的航向。他在炮火中转向，在爆炸中保持冷静，在所有人都慌乱的时候，他依然专注于他的工作。\n\n阿诺德不太说话。他不说豪言壮语，不发表感言，不在关键时刻说一些让人感动的话。\n\n他只是做他该做的事。\n\n在团队中，阿诺德是那种你不一定会注意到的人。但如果没有他，一切都完了。\n\n你的力量在于稳定。在风暴中，你是那个稳住方向盘的人。\n\n不需要被注意到。不需要被赞美。\n\n你只需要在那里。"},ezalia:{n:"埃扎莉亚·玖尔",g:"f",f:"PLANT",tt:"母亲的心",s:{"loyalty": 4, "bravery": 3, "rebel": 1, "wisdom": 5, "depth": 8, "morals": 7, "adventure": 1, "humor": 3},r:"你的心比你的理智更强大。你深爱着你的家人，这份爱让你在痛苦中依然保持善良。你理解宽恕的意义——不是原谅别人的错，而是放过自己。",tb:"埃扎莉亚·玖尔是伊扎克的母亲。\n\n她是一个普通的PLANT市民——不是一个军人，不是一个政治家，不是一个在历史中留下名字的人。\n\n她只是一个失去了丈夫和儿子的母亲。\n\n她的丈夫在战争中阵亡。她的儿子在战争中变得越来越愤怒、越来越痛苦、越来越不像她认识的那个孩子。\n\n埃扎莉亚能做的就是等待——等儿子回来，等战争结束，等一切都好起来的那一天。\n\n但她知道那一天可能永远不会来。\n\n她的故事是关于战争中那些被留在家里的人的故事。不是每一个牺牲都在战场上——有些牺牲是在等待中度过的，在失眠的夜晚里，在听到敲门声时的心跳加速中。\n\n而你也许也经历过那种等待——等一个消息，等一个人，等一个永远不会到来的\"好起来\"。\n\n那份等待本身，就是一种勇敢。"},ramius:{n:"拉米乌斯",g:"f",f:"PLANT",tt:"歌声背后的影子",s:{"loyalty": 7, "bravery": 3, "rebel": 2, "wisdom": 6, "depth": 6, "morals": 6, "adventure": 2, "humor": 2},r:"你是那个在光环背后默默支撑一切的人。你不站在聚光灯下，但你知道自己是不可或缺的。你的忠诚和责任感让你承受了比别人更多的重量，但你从不抱怨。",tb:"拉米乌斯是拉克丝·克莱茵身边最亲近的人。\n\n不是恋人，不是家人，而是一个在黑暗中默默支撑一切的人。\n\n她帮助拉克丝策划逃跑，帮助她联系盟友，帮助她把歌声变成武器。\n\n她不做演讲，不出风头，不在镜头前露面。她做的是那些没有人会注意但没有人能替代的事。\n\n在这个世界里，英雄站在光里，但英雄之所以能站在那里，是因为有人在暗处支撑着他们。\n\n拉米乌斯就是那个人。\n\n她的忠诚不是盲目的——她看到了拉克丝的理念的价值，看到了那份温柔的力量。她选择了用自己的方式来守护那份温柔。\n\n而你也许也是那个在暗处支撑的人。你不在聚光灯下，但你知道自己是不可或缺的。\n\n那份安静而坚定的存在，就是一种力量。"},erica:{n:"艾丽卡·西蒙斯",g:"f",f:"奥布/曙光社",tt:"钢铁玫瑰",s:{"loyalty": 4, "bravery": 4, "rebel": 4, "wisdom": 9, "depth": 5, "morals": 4, "adventure": 5, "humor": 4},r:"你用头脑改变世界。你相信技术和知识的力量，你用自己的方式在战争中寻找出路。你冷静、专业、不感情用事，但你的内心深处也有着对和平的深切渴望。",tb:"艾丽卡·西蒙斯是奥布曙光社的技术人员。\n\n她设计机动战士。她不是在战场上战斗的人，但她创造的武器决定了战斗的走向。\n\n这是一个矛盾的位置——你用技术来创造和平，但你的技术本身就是一种武器。\n\n艾丽卡接受了这个矛盾。她知道世界不是非黑即白的。她知道自己设计的机体可能杀死人，但她相信如果善良的人拥有武器，他们就能保护更多的人。\n\n她的冷静和专业在这个满是情绪的世界里是一种稀缺的力量。\n\n她不感情用事，不空谈理想，不喊口号。\n\n她只是做她最擅长的事——用她的头脑来改变世界。\n\n而你和她一样——你也相信知识和能力的力量。你用自己的方式在寻找出路，不是因为那是英雄的路，而是因为那是你能走的路。"},haro:{n:"哈罗（AI伙伴）",g:"f",f:"永恒号",tt:"永远在你身边的声音",s:{"loyalty": 9, "bravery": 4, "rebel": 1, "wisdom": 3, "depth": 2, "morals": 7, "adventure": 3, "humor": 9},r:"你是一个纯粹的陪伴者。你的存在就是为了给身边的人带来温暖和力量。你不复杂，不纠结，你只是单纯地在乎。在这个充满算计和背叛的世界里，你的单纯反而是最珍贵的。",tb:"哈罗不是人。\n\n它是一个AI机器人——一个圆滚滚的、会说\"哈罗哈罗\"的小东西。\n\n但它可能是这个故事里最温暖的存在。\n\n在所有人都被战争的重压折磨的时候，哈罗依然保持着那种纯粹的快乐。它不在乎谁是敌人谁是朋友，它不在乎什么主义什么立场。\n\n它只是在你身边的时候让你感到温暖。\n\n哈罗的存在提醒着所有人：在最黑暗的时刻，最简单的东西反而最有力量。\n\n一个微笑。一句问候。一个在你难过的时候蹭蹭你的小机器人。\n\n而你也许就是某个人的哈罗——那个在他们最艰难的时刻，用最简单的方式给他们温暖的人。\n\n你不需要很厉害。你不需要说很多。\n\n你只需要在那里。"}};
+const QS=[{"id": 1, "text": "深夜独处时，你最常想的是？", "options": [{"text": "那些还没完成的事", "scores": {"loyalty": 2, "wisdom": 1}}, {"text": "远方在乎的人", "scores": {"loyalty": 2, "depth": 2}}, {"text": "明天可能会发生什么", "scores": {"adventure": 2, "bravery": 1}}, {"text": "什么都不想，放空", "scores": {"humor": 2, "depth": 1}}]}, {"id": 2, "text": "最好的朋友站在了你的对立面，你会？", "options": [{"text": "不惜一切把他拉回来", "scores": {"loyalty": 2, "bravery": 2}}, {"text": "试着理解他的立场", "scores": {"wisdom": 2, "depth": 2}}, {"text": "划清界限，各走各的", "scores": {"rebel": 2, "morals": 1}}, {"text": "心里难受但表面上装没事", "scores": {"depth": 2, "wisdom": 1}}]}, {"id": 3, "text": "你认为战争中最可怕的是什么？", "options": [{"text": "失去身边的人", "scores": {"loyalty": 2, "depth": 2}}, {"text": "变得不再像自己", "scores": {"morals": 2, "depth": 1}}, {"text": "不知道为什么在战斗", "scores": {"wisdom": 2, "rebel": 1}}, {"text": "活下来的人比死的人更痛苦", "scores": {"depth": 2, "morals": 1}}]}, {"id": 4, "text": "一个无辜的人即将受到伤害，但救他意味着背叛你的组织。你？", "options": [{"text": "救人，组织的事以后再说", "scores": {"morals": 2, "bravery": 2}}, {"text": "想办法既救人又不暴露自己", "scores": {"wisdom": 2, "loyalty": 1}}, {"text": "服从组织，相信组织有它的理由", "scores": {"loyalty": 2, "rebel": 1}}, {"text": "内心挣扎但什么都做不了", "scores": {"depth": 2, "adventure": 1}}]}, {"id": 5, "text": "你最想拥有的超能力是？", "options": [{"text": "读心术", "scores": {"wisdom": 2, "depth": 2}}, {"text": "瞬间移动", "scores": {"adventure": 2, "bravery": 1}}, {"text": "时间倒流", "scores": {"depth": 2, "loyalty": 1}}, {"text": "让所有人都幸福", "scores": {"morals": 2, "humor": 1}}]}, {"id": 6, "text": "面对一个强大的敌人，你的第一反应是？", "options": [{"text": "打，没别的选项", "scores": {"bravery": 2, "adventure": 2}}, {"text": "分析对方的弱点", "scores": {"wisdom": 2, "depth": 1}}, {"text": "想办法避开", "scores": {"rebel": 1, "adventure": 2}}, {"text": "先搞清楚他为什么是敌人", "scores": {"wisdom": 1, "depth": 2}}]}, {"id": 7, "text": "你最不能原谅的是什么？", "options": [{"text": "背叛", "scores": {"loyalty": 2, "morals": 1}}, {"text": "欺骗", "scores": {"morals": 2, "depth": 1}}, {"text": "利用弱者", "scores": {"morals": 2, "bravery": 1}}, {"text": "没有选择的自由", "scores": {"rebel": 2, "depth": 1}}]}, {"id": 8, "text": "如果注定要失去一个人，你希望是在？", "options": [{"text": "从未相遇", "scores": {"depth": 2, "rebel": 1}}, {"text": "在最幸福的时候戛然而止", "scores": {"depth": 2, "loyalty": 1}}, {"text": "在经历了漫长的告别之后", "scores": {"wisdom": 1, "depth": 1}}, {"text": "在彼此还没开始的时候", "scores": {"humor": 1, "adventure": 1}}]}, {"id": 9, "text": "你觉得自己最像以下哪种武器？", "options": [{"text": "一把锋利的剑", "scores": {"bravery": 2, "adventure": 1}}, {"text": "一面盾牌", "scores": {"loyalty": 2, "morals": 2}}, {"text": "一张弓——远程、精准、保持距离", "scores": {"wisdom": 2, "depth": 1}}, {"text": "一面镜子——反射出别人的样子", "scores": {"wisdom": 1, "depth": 2, "humor": 1}}]}, {"id": 10, "text": "有人对你说「你变了」，你的感受是？", "options": [{"text": "欣慰——说明我在成长", "scores": {"wisdom": 1, "adventure": 1}}, {"text": "难过——我是不是丢了什么重要的东西", "scores": {"depth": 2, "loyalty": 1}}, {"text": "无所谓——人本来就会变", "scores": {"rebel": 2, "humor": 1}}, {"text": "警惕——是谁在用过去的标准要求我", "scores": {"rebel": 1, "wisdom": 2}}]}, {"id": 11, "text": "深夜收到一条消息：「你在哪？」你的回复是？", "options": [{"text": "「怎么了？出什么事了？」", "scores": {"loyalty": 1, "bravery": 1}}, {"text": "「在你心里」", "scores": {"humor": 2, "adventure": 1}}, {"text": "直接打电话过去", "scores": {"bravery": 2, "loyalty": 1}}, {"text": "不回复，等对方说清楚", "scores": {"wisdom": 2, "depth": 1}}]}, {"id": 12, "text": "你最害怕被遗忘吗？", "options": [{"text": "是的，那比死亡更可怕", "scores": {"depth": 2, "loyalty": 1}}, {"text": "不怕，只要活着的时候有意义", "scores": {"bravery": 1, "morals": 1}}, {"text": "怕，但我不会说出来", "scores": {"depth": 2, "wisdom": 1}}, {"text": "被谁遗忘？在乎的人不忘就行", "scores": {"loyalty": 2, "humor": 1}}]}, {"id": 13, "text": "你觉得「命运」是？", "options": [{"text": "已经写好的剧本，你只能演", "scores": {"depth": 2, "wisdom": 1}}, {"text": "可以自己改写的东西", "scores": {"rebel": 2, "bravery": 1}}, {"text": "别人替你做的选择", "scores": {"depth": 1, "morals": 1}}, {"text": "不存在，只是人给自己找的借口", "scores": {"rebel": 2, "wisdom": 2}}]}, {"id": 14, "text": "如果你必须在「真相」和「和平」之间选一个，你选？", "options": [{"text": "真相，哪怕它带来混乱", "scores": {"morals": 2, "bravery": 2}}, {"text": "和平，哪怕是建立在谎言之上", "scores": {"loyalty": 2, "wisdom": 1}}, {"text": "两个都想要，不选", "scores": {"rebel": 2, "adventure": 1}}, {"text": "这取决于是什么真相", "scores": {"wisdom": 2, "depth": 1}}]}, {"id": 15, "text": "你更倾向于相信？", "options": [{"text": "人性本善", "scores": {"morals": 2, "loyalty": 1}}, {"text": "人性本恶", "scores": {"wisdom": 2, "depth": 1}}, {"text": "人性无所谓善恶，看环境", "scores": {"wisdom": 2, "rebel": 1}}, {"text": "没想过这个问题", "scores": {"humor": 2, "adventure": 1}}]}, {"id": 16, "text": "你被要求去伤害一个你爱的人。你？", "options": [{"text": "做不到，宁可自己承受后果", "scores": {"loyalty": 2, "morals": 2}}, {"text": "做，但事后加倍弥补", "scores": {"bravery": 1, "depth": 1}}, {"text": "想办法找到第三条路", "scores": {"wisdom": 2, "adventure": 2}}, {"text": "做，但从此不再相信那个下令的人", "scores": {"rebel": 2, "depth": 1}}]}, {"id": 17, "text": "你觉得孤独是一种？", "options": [{"text": "惩罚", "scores": {"loyalty": 2, "humor": 1}}, {"text": "选择", "scores": {"rebel": 2, "depth": 1}}, {"text": "力量——孤独让人清醒", "scores": {"wisdom": 2, "depth": 1}}, {"text": "常态——习惯了就好了", "scores": {"bravery": 1, "depth": 2}}]}, {"id": 18, "text": "你做过最勇敢的事是？", "options": [{"text": "为了保护重要的人而站出来", "scores": {"bravery": 2, "loyalty": 2}}, {"text": "承认自己做错了", "scores": {"morals": 2, "depth": 2}}, {"text": "离开舒适区，去一个完全陌生的地方", "scores": {"adventure": 2, "bravery": 1}}, {"text": "在所有人都沉默的时候说了真话", "scores": {"bravery": 2, "morals": 2}}]}, {"id": 19, "text": "如果可以选择，你想出生在什么时代？", "options": [{"text": "和平年代，安安静静过日子", "scores": {"loyalty": 1, "humor": 2}}, {"text": "乱世——乱世才能看清谁是真正的人", "scores": {"adventure": 2, "bravery": 1}}, {"text": "未来——想看看人类最终会变成什么样", "scores": {"wisdom": 2, "depth": 1}}, {"text": "哪个时代都一样，重要的是和谁在一起", "scores": {"loyalty": 2, "depth": 1}}]}, {"id": 20, "text": "你更擅长？", "options": [{"text": "战斗——面对困难时迎难而上", "scores": {"bravery": 2, "adventure": 1}}, {"text": "谈判——找到各方都能接受的方案", "scores": {"wisdom": 2, "depth": 1}}, {"text": "等待——在最好的时机出手", "scores": {"wisdom": 2, "loyalty": 1}}, {"text": "逃离——先活着再说", "scores": {"rebel": 1, "adventure": 2}}]}, {"id": 21, "text": "你最讨厌别人叫你什么？", "options": [{"text": "懦夫", "scores": {"bravery": 2, "rebel": 1}}, {"text": "骗子", "scores": {"morals": 2, "loyalty": 1}}, {"text": "傻子", "scores": {"wisdom": 1, "rebel": 2}}, {"text": "随便你怎么叫，我不在乎", "scores": {"humor": 2, "depth": 1}}]}, {"id": 22, "text": "你在一个团队中通常扮演什么角色？", "options": [{"text": "领导者——我来扛责任", "scores": {"bravery": 2, "loyalty": 1}}, {"text": "军师——出主意但不冲在前", "scores": {"wisdom": 2, "depth": 1}}, {"text": "执行者——说做什么就做什么", "scores": {"loyalty": 2, "adventure": 1}}, {"text": "调和者——大家别吵架", "scores": {"morals": 1, "humor": 2}}]}, {"id": 23, "text": "你觉得爱情和信念哪个更重要？", "options": [{"text": "爱情，没有爱的人活着也没意思", "scores": {"loyalty": 2, "depth": 2}}, {"text": "信念，爱情可以没有信念不能丢", "scores": {"morals": 2, "rebel": 1}}, {"text": "两个都要", "scores": {"adventure": 2, "bravery": 1}}, {"text": "这两个东西在大部分时候是冲突的", "scores": {"wisdom": 2, "depth": 1}}]}, {"id": 24, "text": "如果明天就是世界末日，你今天会做什么？", "options": [{"text": "陪在最重要的人身边", "scores": {"loyalty": 2, "depth": 2}}, {"text": "去做一件一直想做但不敢做的事", "scores": {"adventure": 2, "bravery": 1}}, {"text": "把没说完的话都说出来", "scores": {"morals": 1, "depth": 2}}, {"text": "该干嘛干嘛，末日又不会因为我改变", "scores": {"humor": 2, "rebel": 1}}]}, {"id": 25, "text": "你觉得「英雄」是？", "options": [{"text": "在关键时刻挺身而出的人", "scores": {"bravery": 2, "morals": 2}}, {"text": "被命运推到那个位置上的普通人", "scores": {"depth": 2, "wisdom": 1}}, {"text": "做出牺牲之后还活下来的人", "scores": {"depth": 2, "bravery": 1}}, {"text": "不存在的——历史是胜利者写的", "scores": {"rebel": 2, "wisdom": 1}}]}, {"id": 26, "text": "你更害怕失去什么？", "options": [{"text": "身边的人", "scores": {"loyalty": 2, "depth": 2}}, {"text": "自己——变成不认识的那种人", "scores": {"morals": 2, "depth": 1}}, {"text": "自由", "scores": {"rebel": 2, "adventure": 2}}, {"text": "希望——失去希望就什么都没了", "scores": {"depth": 2, "bravery": 1}}]}, {"id": 27, "text": "面对不公，你通常？", "options": [{"text": "直接站出来反对", "scores": {"bravery": 2, "morals": 2}}, {"text": "默默收集证据，等待时机", "scores": {"wisdom": 2, "loyalty": 1}}, {"text": "心里愤怒但表面不动", "scores": {"depth": 2, "rebel": 1}}, {"text": "觉得这就是现实，接受它", "scores": {"humor": 1, "wisdom": 1}}]}, {"id": 28, "text": "如果有一封信可以寄给十年后的自己，你会写什么？", "options": [{"text": "「你做到了」", "scores": {"loyalty": 1, "depth": 1}}, {"text": "「别忘了你是谁」", "scores": {"depth": 2, "morals": 1}}, {"text": "「对不起」", "scores": {"depth": 2, "loyalty": 1}}, {"text": "「谢谢你」", "scores": {"humor": 1, "loyalty": 2}}]}, {"id": 29, "text": "你觉得自己在别人眼里是什么样的人？", "options": [{"text": "可靠的人", "scores": {"loyalty": 2, "bravery": 1}}, {"text": "深不可测的人", "scores": {"wisdom": 2, "depth": 2}}, {"text": "有点难接近的人", "scores": {"rebel": 1, "depth": 1}}, {"text": "其实我自己也不知道", "scores": {"humor": 2, "depth": 1}}]}, {"id": 30, "text": "你相信「命中注定的那个人」吗？", "options": [{"text": "相信，而且我已经遇到了", "scores": {"loyalty": 2, "depth": 2}}, {"text": "相信，但我还没遇到", "scores": {"adventure": 2, "depth": 1}}, {"text": "不信——命运是自己选的", "scores": {"rebel": 2, "wisdom": 1}}, {"text": "信不信不重要，重要的是珍惜眼前人", "scores": {"morals": 1, "humor": 1}}]}, {"id": 31, "text": "你愿意为了一个可能永远不会实现的理想赌上一切吗？", "options": [{"text": "愿意，没有理想跟行尸走肉有什么区别", "scores": {"morals": 2, "bravery": 2}}, {"text": "看是什么理想", "scores": {"wisdom": 2, "depth": 1}}, {"text": "不愿意，现实比理想重要", "scores": {"loyalty": 1, "humor": 1}}, {"text": "已经在赌了", "scores": {"bravery": 1, "depth": 2, "rebel": 1}}]}, {"id": 32, "text": "一切结束之后，你最希望别人怎么记住你？", "options": [{"text": "一个说到做到的人", "scores": {"loyalty": 2, "morals": 2}}, {"text": "一个改变了什么的人", "scores": {"bravery": 1, "depth": 2}}, {"text": "一个从不妥协的人", "scores": {"rebel": 2, "morals": 1}}, {"text": "一个笑着面对一切的人", "scores": {"humor": 2, "adventure": 1}}]}];
+
+const DIMS=['loyalty','bravery','rebel','wisdom','depth','morals','adventure','humor'];
+let qi=0,sc={},cqs=[],gender='';
+
+function sh(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function start(){
+  sw('intro','quiz');
+  cqs=sh(QS).slice(0,10);
+  sc={};DIMS.forEach(d=>sc[d]=0);qi=0;showQ();
+}
+
+function sw(from,to){
+  document.getElementById(from).classList.remove('active');
+  document.getElementById(to).classList.add('active');
+}
+
+function showQ(){
+  let q=cqs[qi];
+  document.getElementById('qt').textContent=q.text;
+  document.getElementById('pb').style.width=(qi/10*100)+'%';
+  document.getElementById('qn').textContent='第'+(qi+1)+'题';
+  let od=document.getElementById('os');od.innerHTML='';
+  sh(q.options).forEach(opt=>{
+    let b=document.createElement('button');b.className='opt';b.textContent=opt.text;
+    b.onclick=()=>pick(opt.scores,b);od.appendChild(b);
+  });
+  let c=document.getElementById('qc');c.classList.remove('fi');void c.offsetWidth;c.classList.add('fi');
+}
+
+function pick(s,btn){
+  document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  for(let k in s)sc[k]=(sc[k]||0)+s[k];
+  setTimeout(()=>{qi++;if(qi>=10)sw('quiz','gender');else showQ()},350);
+}
+
+function pickG(g,el){
+  gender=g;
+  document.querySelectorAll('.gcard').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  setTimeout(()=>{sw('gender','loading');setTimeout(calc,2200)},500);
+}
+
+function calc(){
+  let tg=gender==='male'?'f':'m';
+  let scores=[];
+  for(let id in CHARS){
+    let c=CHARS[id];
+    if(c.g!==tg) continue;
+    let dist=0;
+    DIMS.forEach(d=>{
+      let cv=c.s[d]||0, uv=(sc[d]||0)/2;
+      dist+=(cv-uv)*(cv-uv);
+    });
+    scores.push({id,dist,c});
+  }
+  scores.sort((a,b)=>a.dist-b.dist);
+  // 全量候选池（15人）加权随机，确保每个角色都有机会
+  let top=scores; // 所有符合性别的角色都参与
+  // 基础权重：距离反比（近的权重高）
+  let ws=top.map(x=>1/(x.dist+1));
+  // 保底权重：每个角色最低有均值的25%
+  let avgW=ws.reduce((a,b)=>a+b,0)/ws.length;
+  ws=ws.map(w=>Math.max(w, avgW*0.25));
+  let tw=ws.reduce((a,b)=>a+b,0);
+  let rnd=Math.random()*tw,cum=0,pick=top[0];
+  for(let i=0;i<top.length;i++){cum+=ws[i];if(rnd<=cum){pick=top[i];break;}}
+  let maxD=DIMS.length*10*10;
+  let pct=Math.round((1-Math.sqrt(pick.dist)/Math.sqrt(maxD))*55+40);
+  pct=Math.min(98,Math.max(52,pct));
+  showR(pick.id,pick.c,pct);
+}
+
+function showR(id,c,pct){
+  sw('loading','result');
+  let story=c.tb||'';
+  let paras=story.split('\n').filter(p=>p.trim());
+  let h='';
+  h+='<div class="mpct">'+pct+'<span style="font-size:.4em">%</span></div>';
+  h+='<div class="mlbl">命 运 羁 绊 匹 配 度</div>';
+  h+='<div class="divider" style="width:80px;margin:8px auto"></div>';
+  h+='<div class="faction-tag">'+c.f+'</div>';
+  h+='<div class="cname">'+c.n+'</div>';
+  h+='<div class="ctitle">'+c.tt+'</div>';
+  h+='<div class="reason">'+c.r+'</div>';
+  if(paras.length){
+    h+='<div class="story">';
+    h+='<div class="stitle">— '+c.tt+' —</div>';
+    paras.forEach(p=>h+='<p>'+p+'</p>');
+    h+='</div>';
+  }
+  document.getElementById('rc').innerHTML=h;
+}
+
+function restart(){
+  sw('result','intro');
+  document.querySelectorAll('.gcard').forEach(c=>c.classList.remove('sel'));
+}
+
+// 粒子效果
+(function(){
+  let c=document.getElementById('pts');
+  for(let i=0;i<40;i++){
+    let p=document.createElement('div');p.className='particle';
+    p.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;width:'+(Math.random()*3+1)+'px;height:'+(Math.random()*3+1)+'px;--d:'+(Math.random()*4+3)+'s;animation-delay:'+Math.random()*3+'s;opacity:'+(Math.random()*.5+.1);
+    c.appendChild(p);
+  }
+})();
+</script>
+</body>
+</html>
